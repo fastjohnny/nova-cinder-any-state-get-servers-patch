@@ -1,0 +1,34 @@
+--- /usr/lib/python2.7/dist-packages/nova/api/openstack/compute/servers.py	2017-05-04 14:01:39.741784885 +0000
++++ servers.py.new	2017-05-04 13:59:50.485715691 +0000
+@@ -337,16 +337,17 @@
+         # ... Unless 'changes-since' is specified, because 'changes-since'
+         # should return recently deleted instances according to the API spec.
+ 
+-        if 'deleted' not in search_opts:
+-            if 'changes-since' not in search_opts:
+-                # No 'changes-since', so we only want non-deleted servers
+-                search_opts['deleted'] = False
+-        else:
++        if 'any_state' in search_opts:
++            instance_list = self.compute_api.get_all(context,search_opts=search_opts, want_objects=True)
++        
++        elif 'deleted' in search_opts and not 'any_state' in search_opts:
+             # Convert deleted filter value to a valid boolean.
+             # Return non-deleted servers if an invalid value
+             # is passed with deleted filter.
+             search_opts['deleted'] = strutils.bool_from_string(
+                 search_opts['deleted'], default=False)
++        else:
++            search_opts['deleted'] = False
+ 
+         if search_opts.get("vm_state") == ['deleted']:
+             if context.is_admin:
+@@ -1146,7 +1147,7 @@
+     def _get_server_search_options(self, req):
+         """Return server search options allowed by non-admin."""
+         opt_list = ('reservation_id', 'name', 'status', 'image', 'flavor',
+-                    'ip', 'changes-since', 'all_tenants', 'project_id', 'tenant_id', 'deleted')
++                    'ip', 'changes-since', 'all_tenants', 'project_id', 'tenant_id', 'deleted', 'any_state')
+         if api_version_request.is_supported(req, min_version='2.5'):
+             opt_list += ('ip6',)
+         return opt_list
